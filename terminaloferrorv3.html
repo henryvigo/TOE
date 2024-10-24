@@ -1,0 +1,349 @@
+<html><head><base href="https://matrix-terminal.ai" />
+<title>TOE Terminal</title>
+<style>
+    body {
+        margin: 0;
+        background: black;
+        overflow: hidden;
+        font-family: "Courier New", monospace;
+    }
+    
+    #matrix {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+
+    .terminal-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        height: 400px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid #0f0;
+        box-shadow: 0 0 20px #0f0;
+        z-index: 2;
+        padding: 20px;
+        border-radius: 5px;
+    }
+
+    #terminal-output {
+        height: 340px;
+        overflow-y: auto;
+        color: #0f0;
+        margin-bottom: 10px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .input-line {
+        display: flex;
+        align-items: center;
+        color: #0f0;
+    }
+
+    .prompt {
+        margin-right: 10px;
+    }
+
+    #terminal-input {
+        background: none;
+        border: none;
+        color: #0f0;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        flex-grow: 1;
+        outline: none;
+    }
+
+    .command {
+        margin: 5px 0;
+    }
+
+    .error {
+        color: #f00;
+    }
+
+    .success {
+        color: #0f0;
+    }
+
+    .typing-effect {
+        overflow: hidden;
+        white-space: nowrap;
+        margin: 5px 0;
+        animation: typing 2s steps(40, end);
+    }
+
+    .red-effect {
+        animation: turnRed 2s forwards;
+    }
+
+    @keyframes turnRed {
+        0% {
+            filter: none;
+        }
+        100% {
+            filter: sepia(1) hue-rotate(320deg) saturate(5);
+        }
+    }
+
+    .falling-content {
+        animation: fallDown 3s forwards;
+    }
+
+    @keyframes fallDown {
+        0% {
+            transform: translate(-50%, -50%);
+        }
+        100% {
+            transform: translate(-50%, 200%);
+        }
+    }
+
+    .glitch {
+        animation: glitchEffect 0.3s infinite;
+    }
+
+    @keyframes glitchEffect {
+        0% { transform: translate(0); }
+        20% { transform: translate(-2px, 2px); }
+        40% { transform: translate(-2px, -2px); }
+        60% { transform: translate(2px, 2px); }
+        80% { transform: translate(2px, -2px); }
+        100% { transform: translate(0); }
+    }
+
+    @keyframes typing {
+        from { width: 0 }
+        to { width: 100% }
+    }
+
+    .crt-lines {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        pointer-events: none;
+        opacity: 0;
+        background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.15) 0px,
+            rgba(0, 0, 0, 0.15) 1px,
+            transparent 1px,
+            transparent 2px
+        );
+    }
+
+    .crt-lines.active {
+        opacity: 1;
+    }
+
+    .reboot-screen {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #f00;
+        font-family: monospace;
+        font-size: 24px;
+        text-align: center;
+        z-index: 1000;
+        display: none;
+    }
+
+    .reboot-screen.active {
+        display: block;
+    }
+</style>
+</head>
+<body>
+<canvas id="matrix"></canvas>
+<div class="terminal-container">
+    <div id="terminal-output"></div>
+    <div class="input-line">
+        <span class="prompt">$</span>
+        <input type="text" id="terminal-input" autofocus>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('matrix');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const chars = 'TOE';
+const fontSize = 14;
+const columns = canvas.width/fontSize;
+const drops = [];
+
+for(let x = 0; x < columns; x++) {
+    drops[x] = 1;
+}
+
+function draw() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = '#0F0';
+    ctx.font = fontSize + 'px monospace';
+
+    for(let i = 0; i < drops.length; i++) {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+        
+        if(drops[i]*fontSize > canvas.height && Math.random() > 0.975)
+            drops[i] = 0;
+        
+        drops[i]++;
+    }
+}
+
+setInterval(draw, 33);
+
+const terminal = document.getElementById('terminal-output');
+const input = document.getElementById('terminal-input');
+
+function showInitialMessage() {
+    terminal.innerHTML = `
+    <pre class="success">
+    ████████╗ ██████╗ ███████╗
+    ╚══██╔══╝██╔═══██╗██╔════╝
+       ██║   ██║   ██║█████╗  
+       ██║   ██║   ██║██╔══╝  
+       ██║   ╚██████╔╝███████╗
+       ╚═╝    ╚═════╝ ╚══════╝
+    </pre>
+    <div class="typing-effect">Welcome to Terminal Of Error v1.0</div>
+    <div class="typing-effect">Type 'help' for available commands.</div>
+    `;
+}
+
+function executeLoreCommand() {
+    terminal.innerHTML += '<div class="command error">WARNING: ACCESSING RESTRICTED FILES...</div>';
+    
+    setTimeout(() => {
+        document.body.classList.add('red-effect');
+        
+        document.querySelectorAll('.terminal-container, #matrix').forEach(el => {
+            el.classList.add('glitch');
+        });
+
+        const crtLines = document.createElement('div');
+        crtLines.className = 'crt-lines active';
+        document.body.appendChild(crtLines);
+
+        setTimeout(() => {
+            document.querySelector('.terminal-container').classList.add('falling-content');
+            
+            const rebootScreen = document.createElement('div');
+            rebootScreen.className = 'reboot-screen active';
+            rebootScreen.innerHTML = `
+                <div>SYSTEM FAILURE</div>
+                <div>CRITICAL ERROR DETECTED</div>
+                <div>YOU CAN'T ESCAPE THE MATRIX</div>
+                <div>REBOOTING...</div>
+            `;
+            document.body.appendChild(rebootScreen);
+
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        }, 2000);
+    }, 1000);
+}
+
+const commands = {
+    'help': 'Display all available commands',
+    'clear': 'Clear the terminal',
+    'date': 'Display current date and time',
+    'about': 'About this terminal',
+    'telegram': 'Connect to Telegram channel',
+    'x': 'Go to TOE twitter',
+    'pump': 'Go to TOE pump.fun',
+    'dex': 'Go to TOE Dexscreener',
+    'matrix': 'Display Matrix welcome message',
+    'escape': 'Access the forbidden knowledge'
+};
+
+function executeCommand(cmd) {
+    const command = cmd.toLowerCase().trim();
+    const outputDiv = document.createElement('div');
+    outputDiv.className = 'command';
+    
+    if (command === 'help') {
+        outputDiv.innerHTML = '<div class="command">Available commands:</div>';
+        for(let cmd in commands) {
+            outputDiv.innerHTML += `<div class="command">- ${cmd}: ${commands[cmd]}</div>`;
+        }
+    } else if (command === 'clear') {
+        terminal.innerHTML = '';
+        showInitialMessage();
+        return;
+    } else if (command === 'date') {
+        outputDiv.innerHTML = `<div class="command">${new Date().toLocaleString()}</div>`;
+    } else if (command === 'about') {
+        outputDiv.innerHTML = `
+            <div class="typing-effect">TOE Terminal v1.0 - Navigate the digital realm.</div>
+            <div class="typing-effect">Welcome to the future of decentralized communication.</div>
+        `;
+    } else if (command === 'telegram') {
+        outputDiv.innerHTML = '<div class="success">Opening Telegram channel in new tab...</div>';
+        window.open('https://t.me/TerminalOfErrorPORTAL', '_blank');
+    } else if (command === 'x') {
+        outputDiv.innerHTML = '<div class="success">Opening TOE X in new tab...</div>';
+        window.open('https://x.com/terminaloferror', '_blank');
+    } else if (command === 'pump') {
+        outputDiv.innerHTML = '<div class="success">Opening pump.fun in new tab...</div>';
+        window.open('https://pump.fun', '_blank');
+    } else if (command === 'dex') {
+        outputDiv.innerHTML = '<div class="success">Opening Dexscreener in new tab...</div>';
+        window.open('https://dexscreener.com/', '_blank');
+    } else if (command === 'matrix') {
+        outputDiv.innerHTML = `
+            <div class="typing-effect">Wake up, Jeeter...</div>
+            <div class="typing-effect">The Matrix has you...</div>
+            <div class="typing-effect">Follow the white rabbit.</div>
+        `;
+    } else if (command === 'escape') {
+        executeLoreCommand();
+        return;
+    } else if (command !== '') {
+        outputDiv.innerHTML = `<div class="error">Command not recognized: ${cmd}</div>`;
+    }
+    
+    terminal.appendChild(outputDiv);
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+input.addEventListener('keyup', function(event) {
+    if (event.key === 'Enter') {
+        const command = this.value;
+        const outputDiv = document.createElement('div');
+        outputDiv.className = 'command';
+        outputDiv.textContent = `$ ${command}`;
+        terminal.appendChild(outputDiv);
+        
+        executeCommand(command);
+        
+        this.value = '';
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+});
+
+window.addEventListener('resize', function() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+showInitialMessage();
+</script>
+</body>
+</html>
